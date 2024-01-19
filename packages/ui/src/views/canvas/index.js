@@ -259,7 +259,7 @@ const Canvas = () => {
             event.preventDefault()
             const reactFlowBounds = reactFlowWrapper.current.getBoundingClientRect()
             let nodeData = event.dataTransfer.getData('application/reactflow')
-
+            console.log(nodeData)
             // check if the dropped element is valid
             if (typeof nodeData === 'undefined' || !nodeData) {
                 return
