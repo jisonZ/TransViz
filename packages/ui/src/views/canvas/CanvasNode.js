@@ -213,8 +213,8 @@ const CanvasNode = ({ data }) => {
                                 </Button>
                             </div>
                         )}
+                        {data.showMatrix && <Heatmap data={testdata} width={300} height={200} />}
 
-                        <Heatmap data={testdata} width={700} height={400} />
                         <Divider />
                         <Box sx={{ background: theme.palette.asyncSelect.main, p: 1 }}>
                             <Typography

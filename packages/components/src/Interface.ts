@@ -118,6 +118,10 @@ export interface INode extends INodeProperties {
     run?(nodeData: INodeData, input: string, options?: ICommonObject): Promise<string | ICommonObject>
 }
 
+export interface INodeMatrix extends INode {
+    showMatrix: boolean
+}
+
 export interface INodeData extends INodeProperties {
     id: string
     inputs?: ICommonObject

@@ -38,6 +38,7 @@ export const initNode = (nodeData, newNodeId) => {
     const inputParams = []
     const incoming = nodeData.inputs ? nodeData.inputs.length : 0
     const outgoing = 1
+    const showMatrix = nodeData.showMatrix
 
     const whitelistTypes = [
         'asyncOptions',
