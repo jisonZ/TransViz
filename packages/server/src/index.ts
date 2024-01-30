@@ -480,861 +480,861 @@ export class App {
         // ChatMessage
         // ----------------------------------------
 
-        // Get all chatmessages from chatflowid
-        this.app.get('/api/v1/chatmessage/:id', async (req: Request, res: Response) => {
-            const sortOrder = req.query?.order as string | undefined
-            const chatId = req.query?.chatId as string | undefined
-            const memoryType = req.query?.memoryType as string | undefined
-            const sessionId = req.query?.sessionId as string | undefined
-            const startDate = req.query?.startDate as string | undefined
-            const endDate = req.query?.endDate as string | undefined
-            let chatTypeFilter = req.query?.chatType as chatType | undefined
+        // // Get all chatmessages from chatflowid
+        // this.app.get('/api/v1/chatmessage/:id', async (req: Request, res: Response) => {
+        //     const sortOrder = req.query?.order as string | undefined
+        //     const chatId = req.query?.chatId as string | undefined
+        //     const memoryType = req.query?.memoryType as string | undefined
+        //     const sessionId = req.query?.sessionId as string | undefined
+        //     const startDate = req.query?.startDate as string | undefined
+        //     const endDate = req.query?.endDate as string | undefined
+        //     let chatTypeFilter = req.query?.chatType as chatType | undefined
 
-            if (chatTypeFilter) {
-                try {
-                    const chatTypeFilterArray = JSON.parse(chatTypeFilter)
-                    if (chatTypeFilterArray.includes(chatType.EXTERNAL) && chatTypeFilterArray.includes(chatType.INTERNAL)) {
-                        chatTypeFilter = undefined
-                    } else if (chatTypeFilterArray.includes(chatType.EXTERNAL)) {
-                        chatTypeFilter = chatType.EXTERNAL
-                    } else if (chatTypeFilterArray.includes(chatType.INTERNAL)) {
-                        chatTypeFilter = chatType.INTERNAL
-                    }
-                } catch (e) {
-                    return res.status(500).send(e)
-                }
-            }
+        //     if (chatTypeFilter) {
+        //         try {
+        //             const chatTypeFilterArray = JSON.parse(chatTypeFilter)
+        //             if (chatTypeFilterArray.includes(chatType.EXTERNAL) && chatTypeFilterArray.includes(chatType.INTERNAL)) {
+        //                 chatTypeFilter = undefined
+        //             } else if (chatTypeFilterArray.includes(chatType.EXTERNAL)) {
+        //                 chatTypeFilter = chatType.EXTERNAL
+        //             } else if (chatTypeFilterArray.includes(chatType.INTERNAL)) {
+        //                 chatTypeFilter = chatType.INTERNAL
+        //             }
+        //         } catch (e) {
+        //             return res.status(500).send(e)
+        //         }
+        //     }
 
-            const chatmessages = await this.getChatMessage(
-                req.params.id,
-                chatTypeFilter,
-                sortOrder,
-                chatId,
-                memoryType,
-                sessionId,
-                startDate,
-                endDate
-            )
-            return res.json(chatmessages)
-        })
+        //     const chatmessages = await this.getChatMessage(
+        //         req.params.id,
+        //         chatTypeFilter,
+        //         sortOrder,
+        //         chatId,
+        //         memoryType,
+        //         sessionId,
+        //         startDate,
+        //         endDate
+        //     )
+        //     return res.json(chatmessages)
+        // })
 
-        // Get internal chatmessages from chatflowid
-        this.app.get('/api/v1/internal-chatmessage/:id', async (req: Request, res: Response) => {
-            const chatmessages = await this.getChatMessage(req.params.id, chatType.INTERNAL)
-            return res.json(chatmessages)
-        })
+        // // Get internal chatmessages from chatflowid
+        // this.app.get('/api/v1/internal-chatmessage/:id', async (req: Request, res: Response) => {
+        //     const chatmessages = await this.getChatMessage(req.params.id, chatType.INTERNAL)
+        //     return res.json(chatmessages)
+        // })
 
-        // Add chatmessages for chatflowid
-        this.app.post('/api/v1/chatmessage/:id', async (req: Request, res: Response) => {
-            const body = req.body
-            const results = await this.addChatMessage(body)
-            return res.json(results)
-        })
+        // // Add chatmessages for chatflowid
+        // this.app.post('/api/v1/chatmessage/:id', async (req: Request, res: Response) => {
+        //     const body = req.body
+        //     const results = await this.addChatMessage(body)
+        //     return res.json(results)
+        // })
 
-        // Delete all chatmessages from chatId
-        this.app.delete('/api/v1/chatmessage/:id', async (req: Request, res: Response) => {
-            const chatflowid = req.params.id
-            const chatflow = await this.AppDataSource.getRepository(ChatFlow).findOneBy({
-                id: chatflowid
-            })
-            if (!chatflow) {
-                res.status(404).send(`Chatflow ${chatflowid} not found`)
-                return
-            }
-            const chatId = req.query?.chatId as string
-            const memoryType = req.query?.memoryType as string | undefined
-            const sessionId = req.query?.sessionId as string | undefined
-            const chatType = req.query?.chatType as string | undefined
-            const isClearFromViewMessageDialog = req.query?.isClearFromViewMessageDialog as string | undefined
+        // // Delete all chatmessages from chatId
+        // this.app.delete('/api/v1/chatmessage/:id', async (req: Request, res: Response) => {
+        //     const chatflowid = req.params.id
+        //     const chatflow = await this.AppDataSource.getRepository(ChatFlow).findOneBy({
+        //         id: chatflowid
+        //     })
+        //     if (!chatflow) {
+        //         res.status(404).send(`Chatflow ${chatflowid} not found`)
+        //         return
+        //     }
+        //     const chatId = req.query?.chatId as string
+        //     const memoryType = req.query?.memoryType as string | undefined
+        //     const sessionId = req.query?.sessionId as string | undefined
+        //     const chatType = req.query?.chatType as string | undefined
+        //     const isClearFromViewMessageDialog = req.query?.isClearFromViewMessageDialog as string | undefined
 
-            const flowData = chatflow.flowData
-            const parsedFlowData: IReactFlowObject = JSON.parse(flowData)
-            const nodes = parsedFlowData.nodes
+        //     const flowData = chatflow.flowData
+        //     const parsedFlowData: IReactFlowObject = JSON.parse(flowData)
+        //     const nodes = parsedFlowData.nodes
 
-            try {
-                await clearSessionMemory(
-                    nodes,
-                    this.nodesPool.componentNodes,
-                    chatId,
-                    this.AppDataSource,
-                    sessionId,
-                    memoryType,
-                    isClearFromViewMessageDialog
-                )
-            } catch (e) {
-                return res.status(500).send('Error clearing chat messages')
-            }
+        //     try {
+        //         await clearSessionMemory(
+        //             nodes,
+        //             this.nodesPool.componentNodes,
+        //             chatId,
+        //             this.AppDataSource,
+        //             sessionId,
+        //             memoryType,
+        //             isClearFromViewMessageDialog
+        //         )
+        //     } catch (e) {
+        //         return res.status(500).send('Error clearing chat messages')
+        //     }
 
-            const deleteOptions: FindOptionsWhere<ChatMessage> = { chatflowid }
-            if (chatId) deleteOptions.chatId = chatId
-            if (memoryType) deleteOptions.memoryType = memoryType
-            if (sessionId) deleteOptions.sessionId = sessionId
-            if (chatType) deleteOptions.chatType = chatType
+        //     const deleteOptions: FindOptionsWhere<ChatMessage> = { chatflowid }
+        //     if (chatId) deleteOptions.chatId = chatId
+        //     if (memoryType) deleteOptions.memoryType = memoryType
+        //     if (sessionId) deleteOptions.sessionId = sessionId
+        //     if (chatType) deleteOptions.chatType = chatType
 
-            const results = await this.AppDataSource.getRepository(ChatMessage).delete(deleteOptions)
-            return res.json(results)
-        })
+        //     const results = await this.AppDataSource.getRepository(ChatMessage).delete(deleteOptions)
+        //     return res.json(results)
+        // })
 
         // ----------------------------------------
         // Credentials
         // ----------------------------------------
 
-        // Create new credential
-        this.app.post('/api/v1/credentials', async (req: Request, res: Response) => {
-            const body = req.body
-            const newCredential = await transformToCredentialEntity(body)
-            const credential = this.AppDataSource.getRepository(Credential).create(newCredential)
-            const results = await this.AppDataSource.getRepository(Credential).save(credential)
-            return res.json(results)
-        })
+        // // Create new credential
+        // this.app.post('/api/v1/credentials', async (req: Request, res: Response) => {
+        //     const body = req.body
+        //     const newCredential = await transformToCredentialEntity(body)
+        //     const credential = this.AppDataSource.getRepository(Credential).create(newCredential)
+        //     const results = await this.AppDataSource.getRepository(Credential).save(credential)
+        //     return res.json(results)
+        // })
 
-        // Get all credentials
-        this.app.get('/api/v1/credentials', async (req: Request, res: Response) => {
-            if (req.query.credentialName) {
-                let returnCredentials = []
-                if (Array.isArray(req.query.credentialName)) {
-                    for (let i = 0; i < req.query.credentialName.length; i += 1) {
-                        const name = req.query.credentialName[i] as string
-                        const credentials = await this.AppDataSource.getRepository(Credential).findBy({
-                            credentialName: name
-                        })
-                        returnCredentials.push(...credentials)
-                    }
-                } else {
-                    const credentials = await this.AppDataSource.getRepository(Credential).findBy({
-                        credentialName: req.query.credentialName as string
-                    })
-                    returnCredentials = [...credentials]
-                }
-                return res.json(returnCredentials)
-            } else {
-                const credentials = await this.AppDataSource.getRepository(Credential).find()
-                const returnCredentials = []
-                for (const credential of credentials) {
-                    returnCredentials.push(omit(credential, ['encryptedData']))
-                }
-                return res.json(returnCredentials)
-            }
-        })
+        // // Get all credentials
+        // this.app.get('/api/v1/credentials', async (req: Request, res: Response) => {
+        //     if (req.query.credentialName) {
+        //         let returnCredentials = []
+        //         if (Array.isArray(req.query.credentialName)) {
+        //             for (let i = 0; i < req.query.credentialName.length; i += 1) {
+        //                 const name = req.query.credentialName[i] as string
+        //                 const credentials = await this.AppDataSource.getRepository(Credential).findBy({
+        //                     credentialName: name
+        //                 })
+        //                 returnCredentials.push(...credentials)
+        //             }
+        //         } else {
+        //             const credentials = await this.AppDataSource.getRepository(Credential).findBy({
+        //                 credentialName: req.query.credentialName as string
+        //             })
+        //             returnCredentials = [...credentials]
+        //         }
+        //         return res.json(returnCredentials)
+        //     } else {
+        //         const credentials = await this.AppDataSource.getRepository(Credential).find()
+        //         const returnCredentials = []
+        //         for (const credential of credentials) {
+        //             returnCredentials.push(omit(credential, ['encryptedData']))
+        //         }
+        //         return res.json(returnCredentials)
+        //     }
+        // })
 
-        // Get specific credential
-        this.app.get('/api/v1/credentials/:id', async (req: Request, res: Response) => {
-            const credential = await this.AppDataSource.getRepository(Credential).findOneBy({
-                id: req.params.id
-            })
+        // // Get specific credential
+        // this.app.get('/api/v1/credentials/:id', async (req: Request, res: Response) => {
+        //     const credential = await this.AppDataSource.getRepository(Credential).findOneBy({
+        //         id: req.params.id
+        //     })
 
-            if (!credential) return res.status(404).send(`Credential ${req.params.id} not found`)
+        //     if (!credential) return res.status(404).send(`Credential ${req.params.id} not found`)
 
-            // Decrpyt credentialData
-            const decryptedCredentialData = await decryptCredentialData(
-                credential.encryptedData,
-                credential.credentialName,
-                this.nodesPool.componentCredentials
-            )
-            const returnCredential: ICredentialReturnResponse = {
-                ...credential,
-                plainDataObj: decryptedCredentialData
-            }
-            return res.json(omit(returnCredential, ['encryptedData']))
-        })
+        //     // Decrpyt credentialData
+        //     const decryptedCredentialData = await decryptCredentialData(
+        //         credential.encryptedData,
+        //         credential.credentialName,
+        //         this.nodesPool.componentCredentials
+        //     )
+        //     const returnCredential: ICredentialReturnResponse = {
+        //         ...credential,
+        //         plainDataObj: decryptedCredentialData
+        //     }
+        //     return res.json(omit(returnCredential, ['encryptedData']))
+        // })
 
-        // Update credential
-        this.app.put('/api/v1/credentials/:id', async (req: Request, res: Response) => {
-            const credential = await this.AppDataSource.getRepository(Credential).findOneBy({
-                id: req.params.id
-            })
+        // // Update credential
+        // this.app.put('/api/v1/credentials/:id', async (req: Request, res: Response) => {
+        //     const credential = await this.AppDataSource.getRepository(Credential).findOneBy({
+        //         id: req.params.id
+        //     })
 
-            if (!credential) return res.status(404).send(`Credential ${req.params.id} not found`)
+        //     if (!credential) return res.status(404).send(`Credential ${req.params.id} not found`)
 
-            const body = req.body
-            const updateCredential = await transformToCredentialEntity(body)
-            this.AppDataSource.getRepository(Credential).merge(credential, updateCredential)
-            const result = await this.AppDataSource.getRepository(Credential).save(credential)
+        //     const body = req.body
+        //     const updateCredential = await transformToCredentialEntity(body)
+        //     this.AppDataSource.getRepository(Credential).merge(credential, updateCredential)
+        //     const result = await this.AppDataSource.getRepository(Credential).save(credential)
 
-            return res.json(result)
-        })
+        //     return res.json(result)
+        // })
 
-        // Delete all credentials from chatflowid
-        this.app.delete('/api/v1/credentials/:id', async (req: Request, res: Response) => {
-            const results = await this.AppDataSource.getRepository(Credential).delete({ id: req.params.id })
-            return res.json(results)
-        })
+        // // Delete all credentials from chatflowid
+        // this.app.delete('/api/v1/credentials/:id', async (req: Request, res: Response) => {
+        //     const results = await this.AppDataSource.getRepository(Credential).delete({ id: req.params.id })
+        //     return res.json(results)
+        // })
 
         // ----------------------------------------
         // Tools
         // ----------------------------------------
 
-        // Get all tools
-        this.app.get('/api/v1/tools', async (req: Request, res: Response) => {
-            const tools = await this.AppDataSource.getRepository(Tool).find()
-            return res.json(tools)
-        })
+        // // Get all tools
+        // this.app.get('/api/v1/tools', async (req: Request, res: Response) => {
+        //     const tools = await this.AppDataSource.getRepository(Tool).find()
+        //     return res.json(tools)
+        // })
 
-        // Get specific tool
-        this.app.get('/api/v1/tools/:id', async (req: Request, res: Response) => {
-            const tool = await this.AppDataSource.getRepository(Tool).findOneBy({
-                id: req.params.id
-            })
-            return res.json(tool)
-        })
+        // // Get specific tool
+        // this.app.get('/api/v1/tools/:id', async (req: Request, res: Response) => {
+        //     const tool = await this.AppDataSource.getRepository(Tool).findOneBy({
+        //         id: req.params.id
+        //     })
+        //     return res.json(tool)
+        // })
 
-        // Add tool
-        this.app.post('/api/v1/tools', async (req: Request, res: Response) => {
-            const body = req.body
-            const newTool = new Tool()
-            Object.assign(newTool, body)
+        // // Add tool
+        // this.app.post('/api/v1/tools', async (req: Request, res: Response) => {
+        //     const body = req.body
+        //     const newTool = new Tool()
+        //     Object.assign(newTool, body)
 
-            const tool = this.AppDataSource.getRepository(Tool).create(newTool)
-            const results = await this.AppDataSource.getRepository(Tool).save(tool)
+        //     const tool = this.AppDataSource.getRepository(Tool).create(newTool)
+        //     const results = await this.AppDataSource.getRepository(Tool).save(tool)
 
-            await this.telemetry.sendTelemetry('tool_created', {
-                version: await getAppVersion(),
-                toolId: results.id,
-                toolName: results.name
-            })
+        //     await this.telemetry.sendTelemetry('tool_created', {
+        //         version: await getAppVersion(),
+        //         toolId: results.id,
+        //         toolName: results.name
+        //     })
 
-            return res.json(results)
-        })
+        //     return res.json(results)
+        // })
 
-        // Update tool
-        this.app.put('/api/v1/tools/:id', async (req: Request, res: Response) => {
-            const tool = await this.AppDataSource.getRepository(Tool).findOneBy({
-                id: req.params.id
-            })
+        // // Update tool
+        // this.app.put('/api/v1/tools/:id', async (req: Request, res: Response) => {
+        //     const tool = await this.AppDataSource.getRepository(Tool).findOneBy({
+        //         id: req.params.id
+        //     })
 
-            if (!tool) {
-                res.status(404).send(`Tool ${req.params.id} not found`)
-                return
-            }
+        //     if (!tool) {
+        //         res.status(404).send(`Tool ${req.params.id} not found`)
+        //         return
+        //     }
 
-            const body = req.body
-            const updateTool = new Tool()
-            Object.assign(updateTool, body)
+        //     const body = req.body
+        //     const updateTool = new Tool()
+        //     Object.assign(updateTool, body)
 
-            this.AppDataSource.getRepository(Tool).merge(tool, updateTool)
-            const result = await this.AppDataSource.getRepository(Tool).save(tool)
+        //     this.AppDataSource.getRepository(Tool).merge(tool, updateTool)
+        //     const result = await this.AppDataSource.getRepository(Tool).save(tool)
 
-            return res.json(result)
-        })
+        //     return res.json(result)
+        // })
 
-        // Delete tool
-        this.app.delete('/api/v1/tools/:id', async (req: Request, res: Response) => {
-            const results = await this.AppDataSource.getRepository(Tool).delete({ id: req.params.id })
-            return res.json(results)
-        })
+        // // Delete tool
+        // this.app.delete('/api/v1/tools/:id', async (req: Request, res: Response) => {
+        //     const results = await this.AppDataSource.getRepository(Tool).delete({ id: req.params.id })
+        //     return res.json(results)
+        // })
 
         // ----------------------------------------
         // Assistant
         // ----------------------------------------
 
-        // Get all assistants
-        this.app.get('/api/v1/assistants', async (req: Request, res: Response) => {
-            const assistants = await this.AppDataSource.getRepository(Assistant).find()
-            return res.json(assistants)
-        })
+        // // Get all assistants
+        // this.app.get('/api/v1/assistants', async (req: Request, res: Response) => {
+        //     const assistants = await this.AppDataSource.getRepository(Assistant).find()
+        //     return res.json(assistants)
+        // })
 
-        // Get specific assistant
-        this.app.get('/api/v1/assistants/:id', async (req: Request, res: Response) => {
-            const assistant = await this.AppDataSource.getRepository(Assistant).findOneBy({
-                id: req.params.id
-            })
-            return res.json(assistant)
-        })
+        // // Get specific assistant
+        // this.app.get('/api/v1/assistants/:id', async (req: Request, res: Response) => {
+        //     const assistant = await this.AppDataSource.getRepository(Assistant).findOneBy({
+        //         id: req.params.id
+        //     })
+        //     return res.json(assistant)
+        // })
 
-        // Get assistant object
-        this.app.get('/api/v1/openai-assistants/:id', async (req: Request, res: Response) => {
-            const credentialId = req.query.credential as string
-            const credential = await this.AppDataSource.getRepository(Credential).findOneBy({
-                id: credentialId
-            })
+        // // Get assistant object
+        // this.app.get('/api/v1/openai-assistants/:id', async (req: Request, res: Response) => {
+        //     const credentialId = req.query.credential as string
+        //     const credential = await this.AppDataSource.getRepository(Credential).findOneBy({
+        //         id: credentialId
+        //     })
 
-            if (!credential) return res.status(404).send(`Credential ${credentialId} not found`)
+        //     if (!credential) return res.status(404).send(`Credential ${credentialId} not found`)
 
-            // Decrpyt credentialData
-            const decryptedCredentialData = await decryptCredentialData(credential.encryptedData)
-            const openAIApiKey = decryptedCredentialData['openAIApiKey']
-            if (!openAIApiKey) return res.status(404).send(`OpenAI ApiKey not found`)
+        //     // Decrpyt credentialData
+        //     const decryptedCredentialData = await decryptCredentialData(credential.encryptedData)
+        //     const openAIApiKey = decryptedCredentialData['openAIApiKey']
+        //     if (!openAIApiKey) return res.status(404).send(`OpenAI ApiKey not found`)
 
-            const openai = new OpenAI({ apiKey: openAIApiKey })
-            const retrievedAssistant = await openai.beta.assistants.retrieve(req.params.id)
-            const resp = await openai.files.list()
-            const existingFiles = resp.data ?? []
+        //     const openai = new OpenAI({ apiKey: openAIApiKey })
+        //     const retrievedAssistant = await openai.beta.assistants.retrieve(req.params.id)
+        //     const resp = await openai.files.list()
+        //     const existingFiles = resp.data ?? []
 
-            if (retrievedAssistant.file_ids && retrievedAssistant.file_ids.length) {
-                ;(retrievedAssistant as any).files = existingFiles.filter((file) => retrievedAssistant.file_ids.includes(file.id))
-            }
+        //     if (retrievedAssistant.file_ids && retrievedAssistant.file_ids.length) {
+        //         ;(retrievedAssistant as any).files = existingFiles.filter((file) => retrievedAssistant.file_ids.includes(file.id))
+        //     }
 
-            return res.json(retrievedAssistant)
-        })
+        //     return res.json(retrievedAssistant)
+        // })
 
-        // List available assistants
-        this.app.get('/api/v1/openai-assistants', async (req: Request, res: Response) => {
-            const credentialId = req.query.credential as string
-            const credential = await this.AppDataSource.getRepository(Credential).findOneBy({
-                id: credentialId
-            })
+        // // List available assistants
+        // this.app.get('/api/v1/openai-assistants', async (req: Request, res: Response) => {
+        //     const credentialId = req.query.credential as string
+        //     const credential = await this.AppDataSource.getRepository(Credential).findOneBy({
+        //         id: credentialId
+        //     })
 
-            if (!credential) return res.status(404).send(`Credential ${credentialId} not found`)
+        //     if (!credential) return res.status(404).send(`Credential ${credentialId} not found`)
 
-            // Decrpyt credentialData
-            const decryptedCredentialData = await decryptCredentialData(credential.encryptedData)
-            const openAIApiKey = decryptedCredentialData['openAIApiKey']
-            if (!openAIApiKey) return res.status(404).send(`OpenAI ApiKey not found`)
+        //     // Decrpyt credentialData
+        //     const decryptedCredentialData = await decryptCredentialData(credential.encryptedData)
+        //     const openAIApiKey = decryptedCredentialData['openAIApiKey']
+        //     if (!openAIApiKey) return res.status(404).send(`OpenAI ApiKey not found`)
 
-            const openai = new OpenAI({ apiKey: openAIApiKey })
-            const retrievedAssistants = await openai.beta.assistants.list()
+        //     const openai = new OpenAI({ apiKey: openAIApiKey })
+        //     const retrievedAssistants = await openai.beta.assistants.list()
 
-            return res.json(retrievedAssistants.data)
-        })
+        //     return res.json(retrievedAssistants.data)
+        // })
 
-        // Add assistant
-        this.app.post('/api/v1/assistants', async (req: Request, res: Response) => {
-            const body = req.body
+        // // Add assistant
+        // this.app.post('/api/v1/assistants', async (req: Request, res: Response) => {
+        //     const body = req.body
 
-            if (!body.details) return res.status(500).send(`Invalid request body`)
+        //     if (!body.details) return res.status(500).send(`Invalid request body`)
 
-            const assistantDetails = JSON.parse(body.details)
+        //     const assistantDetails = JSON.parse(body.details)
 
-            try {
-                const credential = await this.AppDataSource.getRepository(Credential).findOneBy({
-                    id: body.credential
-                })
+        //     try {
+        //         const credential = await this.AppDataSource.getRepository(Credential).findOneBy({
+        //             id: body.credential
+        //         })
 
-                if (!credential) return res.status(404).send(`Credential ${body.credential} not found`)
+        //         if (!credential) return res.status(404).send(`Credential ${body.credential} not found`)
 
-                // Decrpyt credentialData
-                const decryptedCredentialData = await decryptCredentialData(credential.encryptedData)
-                const openAIApiKey = decryptedCredentialData['openAIApiKey']
-                if (!openAIApiKey) return res.status(404).send(`OpenAI ApiKey not found`)
+        //         // Decrpyt credentialData
+        //         const decryptedCredentialData = await decryptCredentialData(credential.encryptedData)
+        //         const openAIApiKey = decryptedCredentialData['openAIApiKey']
+        //         if (!openAIApiKey) return res.status(404).send(`OpenAI ApiKey not found`)
 
-                const openai = new OpenAI({ apiKey: openAIApiKey })
+        //         const openai = new OpenAI({ apiKey: openAIApiKey })
 
-                let tools = []
-                if (assistantDetails.tools) {
-                    for (const tool of assistantDetails.tools ?? []) {
-                        tools.push({
-                            type: tool
-                        })
-                    }
-                }
+        //         let tools = []
+        //         if (assistantDetails.tools) {
+        //             for (const tool of assistantDetails.tools ?? []) {
+        //                 tools.push({
+        //                     type: tool
+        //                 })
+        //             }
+        //         }
 
-                if (assistantDetails.uploadFiles) {
-                    // Base64 strings
-                    let files: string[] = []
-                    const fileBase64 = assistantDetails.uploadFiles
-                    if (fileBase64.startsWith('[') && fileBase64.endsWith(']')) {
-                        files = JSON.parse(fileBase64)
-                    } else {
-                        files = [fileBase64]
-                    }
+        //         if (assistantDetails.uploadFiles) {
+        //             // Base64 strings
+        //             let files: string[] = []
+        //             const fileBase64 = assistantDetails.uploadFiles
+        //             if (fileBase64.startsWith('[') && fileBase64.endsWith(']')) {
+        //                 files = JSON.parse(fileBase64)
+        //             } else {
+        //                 files = [fileBase64]
+        //             }
 
-                    const uploadedFiles = []
-                    for (const file of files) {
-                        const splitDataURI = file.split(',')
-                        const filename = splitDataURI.pop()?.split(':')[1] ?? ''
-                        const bf = Buffer.from(splitDataURI.pop() || '', 'base64')
-                        const filePath = path.join(getUserHome(), '.flowise', 'openai-assistant', filename)
-                        if (!fs.existsSync(path.join(getUserHome(), '.flowise', 'openai-assistant'))) {
-                            fs.mkdirSync(path.dirname(filePath), { recursive: true })
-                        }
-                        if (!fs.existsSync(filePath)) {
-                            fs.writeFileSync(filePath, bf)
-                        }
+        //             const uploadedFiles = []
+        //             for (const file of files) {
+        //                 const splitDataURI = file.split(',')
+        //                 const filename = splitDataURI.pop()?.split(':')[1] ?? ''
+        //                 const bf = Buffer.from(splitDataURI.pop() || '', 'base64')
+        //                 const filePath = path.join(getUserHome(), '.flowise', 'openai-assistant', filename)
+        //                 if (!fs.existsSync(path.join(getUserHome(), '.flowise', 'openai-assistant'))) {
+        //                     fs.mkdirSync(path.dirname(filePath), { recursive: true })
+        //                 }
+        //                 if (!fs.existsSync(filePath)) {
+        //                     fs.writeFileSync(filePath, bf)
+        //                 }
 
-                        const createdFile = await openai.files.create({
-                            file: fs.createReadStream(filePath),
-                            purpose: 'assistants'
-                        })
-                        uploadedFiles.push(createdFile)
+        //                 const createdFile = await openai.files.create({
+        //                     file: fs.createReadStream(filePath),
+        //                     purpose: 'assistants'
+        //                 })
+        //                 uploadedFiles.push(createdFile)
 
-                        fs.unlinkSync(filePath)
-                    }
-                    assistantDetails.files = [...assistantDetails.files, ...uploadedFiles]
-                }
+        //                 fs.unlinkSync(filePath)
+        //             }
+        //             assistantDetails.files = [...assistantDetails.files, ...uploadedFiles]
+        //         }
 
-                if (!assistantDetails.id) {
-                    const newAssistant = await openai.beta.assistants.create({
-                        name: assistantDetails.name,
-                        description: assistantDetails.description,
-                        instructions: assistantDetails.instructions,
-                        model: assistantDetails.model,
-                        tools,
-                        file_ids: (assistantDetails.files ?? []).map((file: OpenAI.Files.FileObject) => file.id)
-                    })
-                    assistantDetails.id = newAssistant.id
-                } else {
-                    const retrievedAssistant = await openai.beta.assistants.retrieve(assistantDetails.id)
-                    let filteredTools = uniqWith([...retrievedAssistant.tools, ...tools], isEqual)
-                    filteredTools = filteredTools.filter((tool) => !(tool.type === 'function' && !(tool as any).function))
+        //         if (!assistantDetails.id) {
+        //             const newAssistant = await openai.beta.assistants.create({
+        //                 name: assistantDetails.name,
+        //                 description: assistantDetails.description,
+        //                 instructions: assistantDetails.instructions,
+        //                 model: assistantDetails.model,
+        //                 tools,
+        //                 file_ids: (assistantDetails.files ?? []).map((file: OpenAI.Files.FileObject) => file.id)
+        //             })
+        //             assistantDetails.id = newAssistant.id
+        //         } else {
+        //             const retrievedAssistant = await openai.beta.assistants.retrieve(assistantDetails.id)
+        //             let filteredTools = uniqWith([...retrievedAssistant.tools, ...tools], isEqual)
+        //             filteredTools = filteredTools.filter((tool) => !(tool.type === 'function' && !(tool as any).function))
 
-                    await openai.beta.assistants.update(assistantDetails.id, {
-                        name: assistantDetails.name,
-                        description: assistantDetails.description ?? '',
-                        instructions: assistantDetails.instructions ?? '',
-                        model: assistantDetails.model,
-                        tools: filteredTools,
-                        file_ids: uniqWith(
-                            [
-                                ...retrievedAssistant.file_ids,
-                                ...(assistantDetails.files ?? []).map((file: OpenAI.Files.FileObject) => file.id)
-                            ],
-                            isEqual
-                        )
-                    })
-                }
+        //             await openai.beta.assistants.update(assistantDetails.id, {
+        //                 name: assistantDetails.name,
+        //                 description: assistantDetails.description ?? '',
+        //                 instructions: assistantDetails.instructions ?? '',
+        //                 model: assistantDetails.model,
+        //                 tools: filteredTools,
+        //                 file_ids: uniqWith(
+        //                     [
+        //                         ...retrievedAssistant.file_ids,
+        //                         ...(assistantDetails.files ?? []).map((file: OpenAI.Files.FileObject) => file.id)
+        //                     ],
+        //                     isEqual
+        //                 )
+        //             })
+        //         }
 
-                const newAssistantDetails = {
-                    ...assistantDetails
-                }
-                if (newAssistantDetails.uploadFiles) delete newAssistantDetails.uploadFiles
+        //         const newAssistantDetails = {
+        //             ...assistantDetails
+        //         }
+        //         if (newAssistantDetails.uploadFiles) delete newAssistantDetails.uploadFiles
 
-                body.details = JSON.stringify(newAssistantDetails)
-            } catch (error) {
-                return res.status(500).send(`Error creating new assistant: ${error}`)
-            }
+        //         body.details = JSON.stringify(newAssistantDetails)
+        //     } catch (error) {
+        //         return res.status(500).send(`Error creating new assistant: ${error}`)
+        //     }
 
-            const newAssistant = new Assistant()
-            Object.assign(newAssistant, body)
+        //     const newAssistant = new Assistant()
+        //     Object.assign(newAssistant, body)
 
-            const assistant = this.AppDataSource.getRepository(Assistant).create(newAssistant)
-            const results = await this.AppDataSource.getRepository(Assistant).save(assistant)
+        //     const assistant = this.AppDataSource.getRepository(Assistant).create(newAssistant)
+        //     const results = await this.AppDataSource.getRepository(Assistant).save(assistant)
 
-            await this.telemetry.sendTelemetry('assistant_created', {
-                version: await getAppVersion(),
-                assistantId: results.id
-            })
+        //     await this.telemetry.sendTelemetry('assistant_created', {
+        //         version: await getAppVersion(),
+        //         assistantId: results.id
+        //     })
 
-            return res.json(results)
-        })
+        //     return res.json(results)
+        // })
 
-        // Update assistant
-        this.app.put('/api/v1/assistants/:id', async (req: Request, res: Response) => {
-            const assistant = await this.AppDataSource.getRepository(Assistant).findOneBy({
-                id: req.params.id
-            })
+        // // Update assistant
+        // this.app.put('/api/v1/assistants/:id', async (req: Request, res: Response) => {
+        //     const assistant = await this.AppDataSource.getRepository(Assistant).findOneBy({
+        //         id: req.params.id
+        //     })
 
-            if (!assistant) {
-                res.status(404).send(`Assistant ${req.params.id} not found`)
-                return
-            }
+        //     if (!assistant) {
+        //         res.status(404).send(`Assistant ${req.params.id} not found`)
+        //         return
+        //     }
 
-            try {
-                const openAIAssistantId = JSON.parse(assistant.details)?.id
+        //     try {
+        //         const openAIAssistantId = JSON.parse(assistant.details)?.id
 
-                const body = req.body
-                const assistantDetails = JSON.parse(body.details)
+        //         const body = req.body
+        //         const assistantDetails = JSON.parse(body.details)
 
-                const credential = await this.AppDataSource.getRepository(Credential).findOneBy({
-                    id: body.credential
-                })
+        //         const credential = await this.AppDataSource.getRepository(Credential).findOneBy({
+        //             id: body.credential
+        //         })
 
-                if (!credential) return res.status(404).send(`Credential ${body.credential} not found`)
+        //         if (!credential) return res.status(404).send(`Credential ${body.credential} not found`)
 
-                // Decrpyt credentialData
-                const decryptedCredentialData = await decryptCredentialData(credential.encryptedData)
-                const openAIApiKey = decryptedCredentialData['openAIApiKey']
-                if (!openAIApiKey) return res.status(404).send(`OpenAI ApiKey not found`)
+        //         // Decrpyt credentialData
+        //         const decryptedCredentialData = await decryptCredentialData(credential.encryptedData)
+        //         const openAIApiKey = decryptedCredentialData['openAIApiKey']
+        //         if (!openAIApiKey) return res.status(404).send(`OpenAI ApiKey not found`)
 
-                const openai = new OpenAI({ apiKey: openAIApiKey })
+        //         const openai = new OpenAI({ apiKey: openAIApiKey })
 
-                let tools = []
-                if (assistantDetails.tools) {
-                    for (const tool of assistantDetails.tools ?? []) {
-                        tools.push({
-                            type: tool
-                        })
-                    }
-                }
+        //         let tools = []
+        //         if (assistantDetails.tools) {
+        //             for (const tool of assistantDetails.tools ?? []) {
+        //                 tools.push({
+        //                     type: tool
+        //                 })
+        //             }
+        //         }
 
-                if (assistantDetails.uploadFiles) {
-                    // Base64 strings
-                    let files: string[] = []
-                    const fileBase64 = assistantDetails.uploadFiles
-                    if (fileBase64.startsWith('[') && fileBase64.endsWith(']')) {
-                        files = JSON.parse(fileBase64)
-                    } else {
-                        files = [fileBase64]
-                    }
+        //         if (assistantDetails.uploadFiles) {
+        //             // Base64 strings
+        //             let files: string[] = []
+        //             const fileBase64 = assistantDetails.uploadFiles
+        //             if (fileBase64.startsWith('[') && fileBase64.endsWith(']')) {
+        //                 files = JSON.parse(fileBase64)
+        //             } else {
+        //                 files = [fileBase64]
+        //             }
 
-                    const uploadedFiles = []
-                    for (const file of files) {
-                        const splitDataURI = file.split(',')
-                        const filename = splitDataURI.pop()?.split(':')[1] ?? ''
-                        const bf = Buffer.from(splitDataURI.pop() || '', 'base64')
-                        const filePath = path.join(getUserHome(), '.flowise', 'openai-assistant', filename)
-                        if (!fs.existsSync(path.join(getUserHome(), '.flowise', 'openai-assistant'))) {
-                            fs.mkdirSync(path.dirname(filePath), { recursive: true })
-                        }
-                        if (!fs.existsSync(filePath)) {
-                            fs.writeFileSync(filePath, bf)
-                        }
+        //             const uploadedFiles = []
+        //             for (const file of files) {
+        //                 const splitDataURI = file.split(',')
+        //                 const filename = splitDataURI.pop()?.split(':')[1] ?? ''
+        //                 const bf = Buffer.from(splitDataURI.pop() || '', 'base64')
+        //                 const filePath = path.join(getUserHome(), '.flowise', 'openai-assistant', filename)
+        //                 if (!fs.existsSync(path.join(getUserHome(), '.flowise', 'openai-assistant'))) {
+        //                     fs.mkdirSync(path.dirname(filePath), { recursive: true })
+        //                 }
+        //                 if (!fs.existsSync(filePath)) {
+        //                     fs.writeFileSync(filePath, bf)
+        //                 }
 
-                        const createdFile = await openai.files.create({
-                            file: fs.createReadStream(filePath),
-                            purpose: 'assistants'
-                        })
-                        uploadedFiles.push(createdFile)
+        //                 const createdFile = await openai.files.create({
+        //                     file: fs.createReadStream(filePath),
+        //                     purpose: 'assistants'
+        //                 })
+        //                 uploadedFiles.push(createdFile)
 
-                        fs.unlinkSync(filePath)
-                    }
-                    assistantDetails.files = [...assistantDetails.files, ...uploadedFiles]
-                }
+        //                 fs.unlinkSync(filePath)
+        //             }
+        //             assistantDetails.files = [...assistantDetails.files, ...uploadedFiles]
+        //         }
 
-                const retrievedAssistant = await openai.beta.assistants.retrieve(openAIAssistantId)
-                let filteredTools = uniqWith([...retrievedAssistant.tools, ...tools], isEqual)
-                filteredTools = filteredTools.filter((tool) => !(tool.type === 'function' && !(tool as any).function))
+        //         const retrievedAssistant = await openai.beta.assistants.retrieve(openAIAssistantId)
+        //         let filteredTools = uniqWith([...retrievedAssistant.tools, ...tools], isEqual)
+        //         filteredTools = filteredTools.filter((tool) => !(tool.type === 'function' && !(tool as any).function))
 
-                await openai.beta.assistants.update(openAIAssistantId, {
-                    name: assistantDetails.name,
-                    description: assistantDetails.description,
-                    instructions: assistantDetails.instructions,
-                    model: assistantDetails.model,
-                    tools: filteredTools,
-                    file_ids: uniqWith(
-                        [...retrievedAssistant.file_ids, ...(assistantDetails.files ?? []).map((file: OpenAI.Files.FileObject) => file.id)],
-                        isEqual
-                    )
-                })
+        //         await openai.beta.assistants.update(openAIAssistantId, {
+        //             name: assistantDetails.name,
+        //             description: assistantDetails.description,
+        //             instructions: assistantDetails.instructions,
+        //             model: assistantDetails.model,
+        //             tools: filteredTools,
+        //             file_ids: uniqWith(
+        //                 [...retrievedAssistant.file_ids, ...(assistantDetails.files ?? []).map((file: OpenAI.Files.FileObject) => file.id)],
+        //                 isEqual
+        //             )
+        //         })
 
-                const newAssistantDetails = {
-                    ...assistantDetails,
-                    id: openAIAssistantId
-                }
-                if (newAssistantDetails.uploadFiles) delete newAssistantDetails.uploadFiles
+        //         const newAssistantDetails = {
+        //             ...assistantDetails,
+        //             id: openAIAssistantId
+        //         }
+        //         if (newAssistantDetails.uploadFiles) delete newAssistantDetails.uploadFiles
 
-                const updateAssistant = new Assistant()
-                body.details = JSON.stringify(newAssistantDetails)
-                Object.assign(updateAssistant, body)
+        //         const updateAssistant = new Assistant()
+        //         body.details = JSON.stringify(newAssistantDetails)
+        //         Object.assign(updateAssistant, body)
 
-                this.AppDataSource.getRepository(Assistant).merge(assistant, updateAssistant)
-                const result = await this.AppDataSource.getRepository(Assistant).save(assistant)
+        //         this.AppDataSource.getRepository(Assistant).merge(assistant, updateAssistant)
+        //         const result = await this.AppDataSource.getRepository(Assistant).save(assistant)
 
-                return res.json(result)
-            } catch (error) {
-                return res.status(500).send(`Error updating assistant: ${error}`)
-            }
-        })
+        //         return res.json(result)
+        //     } catch (error) {
+        //         return res.status(500).send(`Error updating assistant: ${error}`)
+        //     }
+        // })
 
-        // Delete assistant
-        this.app.delete('/api/v1/assistants/:id', async (req: Request, res: Response) => {
-            const assistant = await this.AppDataSource.getRepository(Assistant).findOneBy({
-                id: req.params.id
-            })
+        // // Delete assistant
+        // this.app.delete('/api/v1/assistants/:id', async (req: Request, res: Response) => {
+        //     const assistant = await this.AppDataSource.getRepository(Assistant).findOneBy({
+        //         id: req.params.id
+        //     })
 
-            if (!assistant) {
-                res.status(404).send(`Assistant ${req.params.id} not found`)
-                return
-            }
+        //     if (!assistant) {
+        //         res.status(404).send(`Assistant ${req.params.id} not found`)
+        //         return
+        //     }
 
-            try {
-                const assistantDetails = JSON.parse(assistant.details)
+        //     try {
+        //         const assistantDetails = JSON.parse(assistant.details)
 
-                const credential = await this.AppDataSource.getRepository(Credential).findOneBy({
-                    id: assistant.credential
-                })
+        //         const credential = await this.AppDataSource.getRepository(Credential).findOneBy({
+        //             id: assistant.credential
+        //         })
 
-                if (!credential) return res.status(404).send(`Credential ${assistant.credential} not found`)
+        //         if (!credential) return res.status(404).send(`Credential ${assistant.credential} not found`)
 
-                // Decrpyt credentialData
-                const decryptedCredentialData = await decryptCredentialData(credential.encryptedData)
-                const openAIApiKey = decryptedCredentialData['openAIApiKey']
-                if (!openAIApiKey) return res.status(404).send(`OpenAI ApiKey not found`)
+        //         // Decrpyt credentialData
+        //         const decryptedCredentialData = await decryptCredentialData(credential.encryptedData)
+        //         const openAIApiKey = decryptedCredentialData['openAIApiKey']
+        //         if (!openAIApiKey) return res.status(404).send(`OpenAI ApiKey not found`)
 
-                const openai = new OpenAI({ apiKey: openAIApiKey })
+        //         const openai = new OpenAI({ apiKey: openAIApiKey })
 
-                const results = await this.AppDataSource.getRepository(Assistant).delete({ id: req.params.id })
+        //         const results = await this.AppDataSource.getRepository(Assistant).delete({ id: req.params.id })
 
-                if (req.query.isDeleteBoth) await openai.beta.assistants.del(assistantDetails.id)
+        //         if (req.query.isDeleteBoth) await openai.beta.assistants.del(assistantDetails.id)
 
-                return res.json(results)
-            } catch (error: any) {
-                if (error.status === 404 && error.type === 'invalid_request_error') return res.send('OK')
-                return res.status(500).send(`Error deleting assistant: ${error}`)
-            }
-        })
+        //         return res.json(results)
+        //     } catch (error: any) {
+        //         if (error.status === 404 && error.type === 'invalid_request_error') return res.send('OK')
+        //         return res.status(500).send(`Error deleting assistant: ${error}`)
+        //     }
+        // })
 
-        // Download file from assistant
-        this.app.post('/api/v1/openai-assistants-file', async (req: Request, res: Response) => {
-            const filePath = path.join(getUserHome(), '.flowise', 'openai-assistant', req.body.fileName)
-            //raise error if file path is not absolute
-            if (!path.isAbsolute(filePath)) return res.status(500).send(`Invalid file path`)
-            //raise error if file path contains '..'
-            if (filePath.includes('..')) return res.status(500).send(`Invalid file path`)
-            //only return from the .flowise openai-assistant folder
-            if (!(filePath.includes('.flowise') && filePath.includes('openai-assistant'))) return res.status(500).send(`Invalid file path`)
-            res.setHeader('Content-Disposition', 'attachment; filename=' + path.basename(filePath))
-            const fileStream = fs.createReadStream(filePath)
-            fileStream.pipe(res)
-        })
+        // // Download file from assistant
+        // this.app.post('/api/v1/openai-assistants-file', async (req: Request, res: Response) => {
+        //     const filePath = path.join(getUserHome(), '.flowise', 'openai-assistant', req.body.fileName)
+        //     //raise error if file path is not absolute
+        //     if (!path.isAbsolute(filePath)) return res.status(500).send(`Invalid file path`)
+        //     //raise error if file path contains '..'
+        //     if (filePath.includes('..')) return res.status(500).send(`Invalid file path`)
+        //     //only return from the .flowise openai-assistant folder
+        //     if (!(filePath.includes('.flowise') && filePath.includes('openai-assistant'))) return res.status(500).send(`Invalid file path`)
+        //     res.setHeader('Content-Disposition', 'attachment; filename=' + path.basename(filePath))
+        //     const fileStream = fs.createReadStream(filePath)
+        //     fileStream.pipe(res)
+        // })
 
         // ----------------------------------------
         // Configuration
         // ----------------------------------------
 
-        this.app.get('/api/v1/flow-config/:id', async (req: Request, res: Response) => {
-            const chatflow = await this.AppDataSource.getRepository(ChatFlow).findOneBy({
-                id: req.params.id
-            })
-            if (!chatflow) return res.status(404).send(`Chatflow ${req.params.id} not found`)
-            const flowData = chatflow.flowData
-            const parsedFlowData: IReactFlowObject = JSON.parse(flowData)
-            const nodes = parsedFlowData.nodes
-            const availableConfigs = findAvailableConfigs(nodes, this.nodesPool.componentCredentials)
-            return res.json(availableConfigs)
-        })
+        // this.app.get('/api/v1/flow-config/:id', async (req: Request, res: Response) => {
+        //     const chatflow = await this.AppDataSource.getRepository(ChatFlow).findOneBy({
+        //         id: req.params.id
+        //     })
+        //     if (!chatflow) return res.status(404).send(`Chatflow ${req.params.id} not found`)
+        //     const flowData = chatflow.flowData
+        //     const parsedFlowData: IReactFlowObject = JSON.parse(flowData)
+        //     const nodes = parsedFlowData.nodes
+        //     const availableConfigs = findAvailableConfigs(nodes, this.nodesPool.componentCredentials)
+        //     return res.json(availableConfigs)
+        // })
 
-        this.app.post('/api/v1/node-config', async (req: Request, res: Response) => {
-            const nodes = [{ data: req.body }] as IReactFlowNode[]
-            const availableConfigs = findAvailableConfigs(nodes, this.nodesPool.componentCredentials)
-            return res.json(availableConfigs)
-        })
+        // this.app.post('/api/v1/node-config', async (req: Request, res: Response) => {
+        //     const nodes = [{ data: req.body }] as IReactFlowNode[]
+        //     const availableConfigs = findAvailableConfigs(nodes, this.nodesPool.componentCredentials)
+        //     return res.json(availableConfigs)
+        // })
 
-        this.app.get('/api/v1/version', async (req: Request, res: Response) => {
-            const getPackageJsonPath = (): string => {
-                const checkPaths = [
-                    path.join(__dirname, '..', 'package.json'),
-                    path.join(__dirname, '..', '..', 'package.json'),
-                    path.join(__dirname, '..', '..', '..', 'package.json'),
-                    path.join(__dirname, '..', '..', '..', '..', 'package.json'),
-                    path.join(__dirname, '..', '..', '..', '..', '..', 'package.json')
-                ]
-                for (const checkPath of checkPaths) {
-                    if (fs.existsSync(checkPath)) {
-                        return checkPath
-                    }
-                }
-                return ''
-            }
+        // this.app.get('/api/v1/version', async (req: Request, res: Response) => {
+        //     const getPackageJsonPath = (): string => {
+        //         const checkPaths = [
+        //             path.join(__dirname, '..', 'package.json'),
+        //             path.join(__dirname, '..', '..', 'package.json'),
+        //             path.join(__dirname, '..', '..', '..', 'package.json'),
+        //             path.join(__dirname, '..', '..', '..', '..', 'package.json'),
+        //             path.join(__dirname, '..', '..', '..', '..', '..', 'package.json')
+        //         ]
+        //         for (const checkPath of checkPaths) {
+        //             if (fs.existsSync(checkPath)) {
+        //                 return checkPath
+        //             }
+        //         }
+        //         return ''
+        //     }
 
-            const packagejsonPath = getPackageJsonPath()
-            if (!packagejsonPath) return res.status(404).send('Version not found')
-            try {
-                const content = await fs.promises.readFile(packagejsonPath, 'utf8')
-                const parsedContent = JSON.parse(content)
-                return res.json({ version: parsedContent.version })
-            } catch (error) {
-                return res.status(500).send(`Version not found: ${error}`)
-            }
-        })
+        //     const packagejsonPath = getPackageJsonPath()
+        //     if (!packagejsonPath) return res.status(404).send('Version not found')
+        //     try {
+        //         const content = await fs.promises.readFile(packagejsonPath, 'utf8')
+        //         const parsedContent = JSON.parse(content)
+        //         return res.json({ version: parsedContent.version })
+        //     } catch (error) {
+        //         return res.status(500).send(`Version not found: ${error}`)
+        //     }
+        // })
 
         // ----------------------------------------
         // Upsert
         // ----------------------------------------
 
-        this.app.post(
-            '/api/v1/vector/upsert/:id',
-            upload.array('files'),
-            (req: Request, res: Response, next: NextFunction) => getRateLimiter(req, res, next),
-            async (req: Request, res: Response) => {
-                await this.upsertVector(req, res)
-            }
-        )
+        // this.app.post(
+        //     '/api/v1/vector/upsert/:id',
+        //     upload.array('files'),
+        //     (req: Request, res: Response, next: NextFunction) => getRateLimiter(req, res, next),
+        //     async (req: Request, res: Response) => {
+        //         await this.upsertVector(req, res)
+        //     }
+        // )
 
-        this.app.post('/api/v1/vector/internal-upsert/:id', async (req: Request, res: Response) => {
-            await this.upsertVector(req, res, true)
-        })
+        // this.app.post('/api/v1/vector/internal-upsert/:id', async (req: Request, res: Response) => {
+        //     await this.upsertVector(req, res, true)
+        // })
 
-        // ----------------------------------------
-        // Prompt from Hub
-        // ----------------------------------------
-        this.app.post('/api/v1/load-prompt', async (req: Request, res: Response) => {
-            try {
-                let hub = new Client()
-                const prompt = await hub.pull(req.body.promptName)
-                const templates = parsePrompt(prompt)
-                return res.json({ status: 'OK', prompt: req.body.promptName, templates: templates })
-            } catch (e: any) {
-                return res.json({ status: 'ERROR', prompt: req.body.promptName, error: e?.message })
-            }
-        })
+        // // ----------------------------------------
+        // // Prompt from Hub
+        // // ----------------------------------------
+        // this.app.post('/api/v1/load-prompt', async (req: Request, res: Response) => {
+        //     try {
+        //         let hub = new Client()
+        //         const prompt = await hub.pull(req.body.promptName)
+        //         const templates = parsePrompt(prompt)
+        //         return res.json({ status: 'OK', prompt: req.body.promptName, templates: templates })
+        //     } catch (e: any) {
+        //         return res.json({ status: 'ERROR', prompt: req.body.promptName, error: e?.message })
+        //     }
+        // })
 
-        this.app.post('/api/v1/prompts-list', async (req: Request, res: Response) => {
-            try {
-                const tags = req.body.tags ? `tags=${req.body.tags}` : ''
-                // Default to 100, TODO: add pagination and use offset & limit
-                const url = `https://api.hub.langchain.com/repos/?limit=100&${tags}has_commits=true&sort_field=num_likes&sort_direction=desc&is_archived=false`
-                axios.get(url).then((response) => {
-                    if (response.data.repos) {
-                        return res.json({ status: 'OK', repos: response.data.repos })
-                    }
-                })
-            } catch (e: any) {
-                return res.json({ status: 'ERROR', repos: [] })
-            }
-        })
+        // this.app.post('/api/v1/prompts-list', async (req: Request, res: Response) => {
+        //     try {
+        //         const tags = req.body.tags ? `tags=${req.body.tags}` : ''
+        //         // Default to 100, TODO: add pagination and use offset & limit
+        //         const url = `https://api.hub.langchain.com/repos/?limit=100&${tags}has_commits=true&sort_field=num_likes&sort_direction=desc&is_archived=false`
+        //         axios.get(url).then((response) => {
+        //             if (response.data.repos) {
+        //                 return res.json({ status: 'OK', repos: response.data.repos })
+        //             }
+        //         })
+        //     } catch (e: any) {
+        //         return res.json({ status: 'ERROR', repos: [] })
+        //     }
+        // })
 
         // ----------------------------------------
         // Prediction
         // ----------------------------------------
 
-        // Send input message and get prediction result (External)
-        this.app.post(
-            '/api/v1/prediction/:id',
-            upload.array('files'),
-            (req: Request, res: Response, next: NextFunction) => getRateLimiter(req, res, next),
-            async (req: Request, res: Response) => {
-                await this.buildChatflow(req, res, socketIO)
-            }
-        )
+        // // Send input message and get prediction result (External)
+        // this.app.post(
+        //     '/api/v1/prediction/:id',
+        //     upload.array('files'),
+        //     (req: Request, res: Response, next: NextFunction) => getRateLimiter(req, res, next),
+        //     async (req: Request, res: Response) => {
+        //         await this.buildChatflow(req, res, socketIO)
+        //     }
+        // )
 
-        // Send input message and get prediction result (Internal)
-        this.app.post('/api/v1/internal-prediction/:id', async (req: Request, res: Response) => {
-            await this.buildChatflow(req, res, socketIO, true)
-        })
+        // // Send input message and get prediction result (Internal)
+        // this.app.post('/api/v1/internal-prediction/:id', async (req: Request, res: Response) => {
+        //     await this.buildChatflow(req, res, socketIO, true)
+        // })
 
         // ----------------------------------------
         // Marketplaces
         // ----------------------------------------
 
-        // Get all chatflows for marketplaces
-        this.app.get('/api/v1/marketplaces/chatflows', async (req: Request, res: Response) => {
-            const marketplaceDir = path.join(__dirname, '..', 'marketplaces', 'chatflows')
-            const jsonsInDir = fs.readdirSync(marketplaceDir).filter((file) => path.extname(file) === '.json')
-            const templates: any[] = []
-            jsonsInDir.forEach((file, index) => {
-                const filePath = path.join(__dirname, '..', 'marketplaces', 'chatflows', file)
-                const fileData = fs.readFileSync(filePath)
-                const fileDataObj = JSON.parse(fileData.toString())
-                const template = {
-                    id: index,
-                    name: file.split('.json')[0],
-                    flowData: fileData.toString(),
-                    badge: fileDataObj?.badge,
-                    description: fileDataObj?.description || ''
-                }
-                templates.push(template)
-            })
-            const FlowiseDocsQnA = templates.find((tmp) => tmp.name === 'Flowise Docs QnA')
-            const FlowiseDocsQnAIndex = templates.findIndex((tmp) => tmp.name === 'Flowise Docs QnA')
-            if (FlowiseDocsQnA && FlowiseDocsQnAIndex > 0) {
-                templates.splice(FlowiseDocsQnAIndex, 1)
-                templates.unshift(FlowiseDocsQnA)
-            }
-            return res.json(templates)
-        })
+        // // Get all chatflows for marketplaces
+        // this.app.get('/api/v1/marketplaces/chatflows', async (req: Request, res: Response) => {
+        //     const marketplaceDir = path.join(__dirname, '..', 'marketplaces', 'chatflows')
+        //     const jsonsInDir = fs.readdirSync(marketplaceDir).filter((file) => path.extname(file) === '.json')
+        //     const templates: any[] = []
+        //     jsonsInDir.forEach((file, index) => {
+        //         const filePath = path.join(__dirname, '..', 'marketplaces', 'chatflows', file)
+        //         const fileData = fs.readFileSync(filePath)
+        //         const fileDataObj = JSON.parse(fileData.toString())
+        //         const template = {
+        //             id: index,
+        //             name: file.split('.json')[0],
+        //             flowData: fileData.toString(),
+        //             badge: fileDataObj?.badge,
+        //             description: fileDataObj?.description || ''
+        //         }
+        //         templates.push(template)
+        //     })
+        //     const FlowiseDocsQnA = templates.find((tmp) => tmp.name === 'Flowise Docs QnA')
+        //     const FlowiseDocsQnAIndex = templates.findIndex((tmp) => tmp.name === 'Flowise Docs QnA')
+        //     if (FlowiseDocsQnA && FlowiseDocsQnAIndex > 0) {
+        //         templates.splice(FlowiseDocsQnAIndex, 1)
+        //         templates.unshift(FlowiseDocsQnA)
+        //     }
+        //     return res.json(templates)
+        // })
 
-        // Get all tools for marketplaces
-        this.app.get('/api/v1/marketplaces/tools', async (req: Request, res: Response) => {
-            const marketplaceDir = path.join(__dirname, '..', 'marketplaces', 'tools')
-            const jsonsInDir = fs.readdirSync(marketplaceDir).filter((file) => path.extname(file) === '.json')
-            const templates: any[] = []
-            jsonsInDir.forEach((file, index) => {
-                const filePath = path.join(__dirname, '..', 'marketplaces', 'tools', file)
-                const fileData = fs.readFileSync(filePath)
-                const fileDataObj = JSON.parse(fileData.toString())
-                const template = {
-                    ...fileDataObj,
-                    id: index,
-                    templateName: file.split('.json')[0]
-                }
-                templates.push(template)
-            })
-            return res.json(templates)
-        })
+        // // Get all tools for marketplaces
+        // this.app.get('/api/v1/marketplaces/tools', async (req: Request, res: Response) => {
+        //     const marketplaceDir = path.join(__dirname, '..', 'marketplaces', 'tools')
+        //     const jsonsInDir = fs.readdirSync(marketplaceDir).filter((file) => path.extname(file) === '.json')
+        //     const templates: any[] = []
+        //     jsonsInDir.forEach((file, index) => {
+        //         const filePath = path.join(__dirname, '..', 'marketplaces', 'tools', file)
+        //         const fileData = fs.readFileSync(filePath)
+        //         const fileDataObj = JSON.parse(fileData.toString())
+        //         const template = {
+        //             ...fileDataObj,
+        //             id: index,
+        //             templateName: file.split('.json')[0]
+        //         }
+        //         templates.push(template)
+        //     })
+        //     return res.json(templates)
+        // })
 
         // ----------------------------------------
         // Variables
         // ----------------------------------------
-        this.app.get('/api/v1/variables', async (req: Request, res: Response) => {
-            const variables = await getDataSource().getRepository(Variable).find()
-            return res.json(variables)
-        })
+        // this.app.get('/api/v1/variables', async (req: Request, res: Response) => {
+        //     const variables = await getDataSource().getRepository(Variable).find()
+        //     return res.json(variables)
+        // })
 
-        // Create new variable
-        this.app.post('/api/v1/variables', async (req: Request, res: Response) => {
-            const body = req.body
-            const newVariable = new Variable()
-            Object.assign(newVariable, body)
-            const variable = this.AppDataSource.getRepository(Variable).create(newVariable)
-            const results = await this.AppDataSource.getRepository(Variable).save(variable)
-            return res.json(results)
-        })
+        // // Create new variable
+        // this.app.post('/api/v1/variables', async (req: Request, res: Response) => {
+        //     const body = req.body
+        //     const newVariable = new Variable()
+        //     Object.assign(newVariable, body)
+        //     const variable = this.AppDataSource.getRepository(Variable).create(newVariable)
+        //     const results = await this.AppDataSource.getRepository(Variable).save(variable)
+        //     return res.json(results)
+        // })
 
-        // Update variable
-        this.app.put('/api/v1/variables/:id', async (req: Request, res: Response) => {
-            const variable = await this.AppDataSource.getRepository(Variable).findOneBy({
-                id: req.params.id
-            })
+        // // Update variable
+        // this.app.put('/api/v1/variables/:id', async (req: Request, res: Response) => {
+        //     const variable = await this.AppDataSource.getRepository(Variable).findOneBy({
+        //         id: req.params.id
+        //     })
 
-            if (!variable) return res.status(404).send(`Variable ${req.params.id} not found`)
+        //     if (!variable) return res.status(404).send(`Variable ${req.params.id} not found`)
 
-            const body = req.body
-            const updateVariable = new Variable()
-            Object.assign(updateVariable, body)
-            this.AppDataSource.getRepository(Variable).merge(variable, updateVariable)
-            const result = await this.AppDataSource.getRepository(Variable).save(variable)
+        //     const body = req.body
+        //     const updateVariable = new Variable()
+        //     Object.assign(updateVariable, body)
+        //     this.AppDataSource.getRepository(Variable).merge(variable, updateVariable)
+        //     const result = await this.AppDataSource.getRepository(Variable).save(variable)
 
-            return res.json(result)
-        })
+        //     return res.json(result)
+        // })
 
-        // Delete variable via id
-        this.app.delete('/api/v1/variables/:id', async (req: Request, res: Response) => {
-            const results = await this.AppDataSource.getRepository(Variable).delete({ id: req.params.id })
-            return res.json(results)
-        })
+        // // Delete variable via id
+        // this.app.delete('/api/v1/variables/:id', async (req: Request, res: Response) => {
+        //     const results = await this.AppDataSource.getRepository(Variable).delete({ id: req.params.id })
+        //     return res.json(results)
+        // })
 
         // ----------------------------------------
         // API Keys
         // ----------------------------------------
 
-        const addChatflowsCount = async (keys: any, res: Response) => {
-            if (keys) {
-                const updatedKeys: any[] = []
-                //iterate through keys and get chatflows
-                for (const key of keys) {
-                    const chatflows = await this.AppDataSource.getRepository(ChatFlow)
-                        .createQueryBuilder('cf')
-                        .where('cf.apikeyid = :apikeyid', { apikeyid: key.id })
-                        .getMany()
-                    const linkedChatFlows: any[] = []
-                    chatflows.map((cf) => {
-                        linkedChatFlows.push({
-                            flowName: cf.name,
-                            category: cf.category,
-                            updatedDate: cf.updatedDate
-                        })
-                    })
-                    key.chatFlows = linkedChatFlows
-                    updatedKeys.push(key)
-                }
-                return res.json(updatedKeys)
-            }
-            return res.json(keys)
-        }
-        // Get api keys
-        this.app.get('/api/v1/apikey', async (req: Request, res: Response) => {
-            const keys = await getAPIKeys()
-            return addChatflowsCount(keys, res)
-        })
+        // const addChatflowsCount = async (keys: any, res: Response) => {
+        //     if (keys) {
+        //         const updatedKeys: any[] = []
+        //         //iterate through keys and get chatflows
+        //         for (const key of keys) {
+        //             const chatflows = await this.AppDataSource.getRepository(ChatFlow)
+        //                 .createQueryBuilder('cf')
+        //                 .where('cf.apikeyid = :apikeyid', { apikeyid: key.id })
+        //                 .getMany()
+        //             const linkedChatFlows: any[] = []
+        //             chatflows.map((cf) => {
+        //                 linkedChatFlows.push({
+        //                     flowName: cf.name,
+        //                     category: cf.category,
+        //                     updatedDate: cf.updatedDate
+        //                 })
+        //             })
+        //             key.chatFlows = linkedChatFlows
+        //             updatedKeys.push(key)
+        //         }
+        //         return res.json(updatedKeys)
+        //     }
+        //     return res.json(keys)
+        // }
+        // // Get api keys
+        // this.app.get('/api/v1/apikey', async (req: Request, res: Response) => {
+        //     const keys = await getAPIKeys()
+        //     return addChatflowsCount(keys, res)
+        // })
 
-        // Add new api key
-        this.app.post('/api/v1/apikey', async (req: Request, res: Response) => {
-            const keys = await addAPIKey(req.body.keyName)
-            return addChatflowsCount(keys, res)
-        })
+        // // Add new api key
+        // this.app.post('/api/v1/apikey', async (req: Request, res: Response) => {
+        //     const keys = await addAPIKey(req.body.keyName)
+        //     return addChatflowsCount(keys, res)
+        // })
 
-        // Update api key
-        this.app.put('/api/v1/apikey/:id', async (req: Request, res: Response) => {
-            const keys = await updateAPIKey(req.params.id, req.body.keyName)
-            return addChatflowsCount(keys, res)
-        })
+        // // Update api key
+        // this.app.put('/api/v1/apikey/:id', async (req: Request, res: Response) => {
+        //     const keys = await updateAPIKey(req.params.id, req.body.keyName)
+        //     return addChatflowsCount(keys, res)
+        // })
 
-        // Delete new api key
-        this.app.delete('/api/v1/apikey/:id', async (req: Request, res: Response) => {
-            const keys = await deleteAPIKey(req.params.id)
-            return addChatflowsCount(keys, res)
-        })
+        // // Delete new api key
+        // this.app.delete('/api/v1/apikey/:id', async (req: Request, res: Response) => {
+        //     const keys = await deleteAPIKey(req.params.id)
+        //     return addChatflowsCount(keys, res)
+        // })
 
-        // Verify api key
-        this.app.get('/api/v1/verify/apikey/:apiKey', async (req: Request, res: Response) => {
-            try {
-                const apiKey = await getApiKey(req.params.apiKey)
-                if (!apiKey) return res.status(401).send('Unauthorized')
-                return res.status(200).send('OK')
-            } catch (err: any) {
-                return res.status(500).send(err?.message)
-            }
-        })
+        // // Verify api key
+        // this.app.get('/api/v1/verify/apikey/:apiKey', async (req: Request, res: Response) => {
+        //     try {
+        //         const apiKey = await getApiKey(req.params.apiKey)
+        //         if (!apiKey) return res.status(401).send('Unauthorized')
+        //         return res.status(200).send('OK')
+        //     } catch (err: any) {
+        //         return res.status(500).send(err?.message)
+        //     }
+        // })
 
         // ----------------------------------------
         // Serve UI static
